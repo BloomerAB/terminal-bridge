@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1b26">
+  <title>Terminal Bridge</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/vendor/xterm.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h1>Sessions</h1>
+      <button id="btn-close-sidebar" class="btn-icon" aria-label="Close sidebar">&times;</button>
+    </div>
+    <div id="session-list" class="session-list"></div>
+    <div class="sidebar-footer">
+      <form id="new-session-form" class="new-session-form">
+        <input type="text" id="new-session-name" placeholder="New session name" autocomplete="off" autocapitalize="off" />
+        <button type="submit" class="btn-create">+</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="main" class="main">
+    <div class="toolbar">
+      <button id="btn-sidebar" class="btn-icon" aria-label="Open sessions">&#9776;</button>
+      <span id="current-session" class="current-session">No session</span>
+      <span id="status-indicator" class="status-indicator"></span>
+    </div>
+    <div id="terminal-container" class="terminal-container"></div>
+  </div>
+
+  <script src="/vendor/xterm.js"></script>
+  <script src="/vendor/xterm-addon-fit.js"></script>
+  <script src="/vendor/xterm-addon-web-links.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+    }
+  </script>
+</body>
+</html>
