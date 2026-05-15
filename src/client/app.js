@@ -2,6 +2,8 @@ const { Terminal } = window
 const { FitAddon } = window.FitAddon
 const { WebLinksAddon } = window.WebLinksAddon
 
+const WAKE_URL = 'https://wake.bloomer.se'
+
 const state = {
   currentTarget: null,
   ws: null,
@@ -10,6 +12,7 @@ const state = {
   reconnectTimer: null,
   sessions: [],
   externalTerminals: [],
+  offline: false,
 }
 
 const $ = (sel) => document.querySelector(sel)
@@ -36,10 +39,54 @@ async function fetchSessions() {
     ])
     state.sessions = await sessionsRes.json()
     state.externalTerminals = await terminalsRes.json()
+    if (state.offline) {
+      state.offline = false
+      showEmptyState()
+    }
   } catch {
-    // Keep previous state on failure
+    if (state.sessions.length === 0) {
+      state.offline = true
+      showOfflineState()
+    }
   }
   renderSessions()
+}
+
+async function sendWake() {
+  const $btn = $('#wake-btn')
+  if ($btn) {
+    $btn.textContent = 'Sending...'
+    $btn.disabled = true
+  }
+  try {
+    await fetch(`${WAKE_URL}/api/wake`, { method: 'POST', mode: 'cors' })
+    if ($btn) {
+      $btn.textContent = 'Packet sent — waiting...'
+    }
+    setTimeout(fetchSessions, 8000)
+    setTimeout(fetchSessions, 15000)
+  } catch {
+    if ($btn) {
+      $btn.textContent = 'Wake failed — retry?'
+      $btn.disabled = false
+    }
+  }
+}
+
+function showOfflineState() {
+  const container = $('#terminal-container')
+  container.innerHTML = `
+    <div class="empty-state">
+      <span style="font-size: 24px; color: var(--text-dim);">Mac is sleeping</span>
+      <span class="hint">The terminal-bridge host is not responding</span>
+      <button id="wake-btn" style="
+        margin-top: 16px; padding: 12px 32px; font-size: 16px;
+        background: #7aa2f7; color: #1a1b26; border: none;
+        border-radius: 6px; cursor: pointer; font-weight: 600;
+      ">Wake Mac</button>
+    </div>
+  `
+  $('#wake-btn').addEventListener('click', sendWake)
 }
 
 const WINDOW_COLORS = ['#7aa2f7', '#bb9af7', '#9ece6a', '#e0af68', '#7dcfff', '#f7768e']
