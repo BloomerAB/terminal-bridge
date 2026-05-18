@@ -51,6 +51,12 @@ html, body {
   z-index: 100;
 }
 
+@media (max-width: 767px) {
+  .sidebar {
+    width: 100%;
+  }
+}
+
 .sidebar.open {
   transform: translateX(0);
 }
