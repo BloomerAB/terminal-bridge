@@ -127,6 +127,25 @@ function renderMinimap(panes, color) {
   return `<div class="minimap" style="--map-color:${color}">${cells}</div>`
 }
 
+function renderVirtualMinimap(panes, color) {
+  if (panes.length === 0) return ''
+
+  const cells = panes
+    .map((pane) => {
+      const isActive = pane.target === state.currentTarget
+      return `<div class="minimap-cell ${isActive ? 'active' : ''}" data-target="${pane.target}"
+        style="left:${pane.left.toFixed(1)}%;top:${pane.top.toFixed(1)}%;width:${pane.width.toFixed(1)}%;height:${pane.height.toFixed(1)}%;border-color:${color}">
+        <span class="minimap-label">${pane.label}</span>
+      </div>`
+    })
+    .join('')
+
+  const rowCount = Math.ceil(Math.sqrt(panes.length))
+  const height = Math.max(80, rowCount * 48)
+
+  return `<div class="minimap" style="--map-color:${color};height:${height}px">${cells}</div>`
+}
+
 function renderSessions() {
   const $list = $('#session-list')
 
@@ -193,35 +212,31 @@ function renderSessions() {
   if (vscodeSessions.length > 0) {
     const allPanes = vscodeSessions.flatMap((s) => s.panes)
     const anyAttached = vscodeSessions.some((s) => s.attached)
+    const sorted = vscodeSessions.sort((a, b) => a.name.localeCompare(b.name))
+    const cols = Math.ceil(Math.sqrt(sorted.length))
+    const rows = Math.ceil(sorted.length / cols)
+    const cellW = 100 / cols
+    const cellH = 100 / rows
 
-    const sessionsHtml = vscodeSessions
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .flatMap((session, idx) => {
-        const color = WINDOW_COLORS[idx % WINDOW_COLORS.length]
-        const hasSplits = session.panes.length > 1
+    const virtualPanes = sorted.map((session, idx) => {
+      const col = idx % cols
+      const row = Math.floor(idx / cols)
+      const firstPane = session.panes[0]
+      const label = firstPane
+        ? shortLabel(firstPane.label)
+        : session.name
+      return {
+        target: firstPane?.target ?? `${session.name}:0.0`,
+        label,
+        left: col * cellW,
+        top: row * cellH,
+        width: cellW,
+        height: cellH,
+      }
+    })
 
-        if (hasSplits) {
-          const firstPane = session.panes[0]
-          const label = firstPane
-            ? (firstPane.cwd.split('/').pop() || session.name)
-            : session.name
-          const minimap = renderMinimap(session.panes, color)
-          return [`
-            <div class="window-header">
-              <span class="window-dot" style="background: ${color}"></span>
-              <span class="window-name">${label}</span>
-            </div>
-            ${minimap}`]
-        }
-
-        return session.panes.map((pane) => `
-          <div class="pane-item ${pane.target === state.currentTarget ? 'active' : ''}" data-target="${pane.target}">
-            <span class="window-stripe" style="background: ${color}"></span>
-            <span class="pane-indicator ${pane.active ? 'active' : ''}"></span>
-            <span class="pane-command">${pane.label}</span>
-          </div>`)
-      })
-      .join('')
+    const color = WINDOW_COLORS[0]
+    const minimap = renderVirtualMinimap(virtualPanes, color)
 
     html += `
       <div class="session-group">
@@ -230,7 +245,7 @@ function renderSessions() {
           <span class="session-name">VS Code</span>
           <span class="session-count">${allPanes.length} panes</span>
         </div>
-        <div class="pane-list">${sessionsHtml}</div>
+        ${minimap}
       </div>
     `
   }
