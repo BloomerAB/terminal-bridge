@@ -57,14 +57,18 @@ async function sendWake() {
   const buttons = ['#wake-btn', '#sidebar-wake-btn'].map($).filter(Boolean)
   buttons.forEach((b) => { b.textContent = 'Sending...'; b.disabled = true })
   try {
-    await fetch(`${WAKE_URL}/api/wake`, { method: 'POST', mode: 'cors' })
-    buttons.forEach((b) => { b.textContent = 'Packet sent — waiting...' })
-    setTimeout(fetchSessions, 8000)
-    setTimeout(fetchSessions, 15000)
-    setTimeout(() => buttons.forEach((b) => { b.textContent = 'Wake Mac'; b.disabled = false }), 20000)
+    const res = await fetch(`${WAKE_URL}/api/wake`, { method: 'POST', mode: 'cors' })
+    if (res.ok) {
+      buttons.forEach((b) => { b.textContent = 'Packet sent' })
+    } else {
+      buttons.forEach((b) => { b.textContent = 'Wake sent (service busy)' })
+    }
   } catch {
-    buttons.forEach((b) => { b.textContent = 'Wake failed — retry?'; b.disabled = false })
+    buttons.forEach((b) => { b.textContent = 'Wake service unavailable' })
   }
+  setTimeout(fetchSessions, 8000)
+  setTimeout(fetchSessions, 15000)
+  setTimeout(() => buttons.forEach((b) => { b.textContent = 'Wake Mac'; b.disabled = false }), 10000)
 }
 
 function showOfflineState() {
