@@ -216,31 +216,40 @@ function renderSessions() {
   if (vscodeSessions.length > 0) {
     const allPanes = vscodeSessions.flatMap((s) => s.panes)
     const anyAttached = vscodeSessions.some((s) => s.attached)
-    const sorted = vscodeSessions.sort((a, b) => a.name.localeCompare(b.name))
-    const cols = Math.ceil(Math.sqrt(sorted.length))
-    const rows = Math.ceil(sorted.length / cols)
-    const cellW = 100 / cols
-    const cellH = 100 / rows
 
-    const virtualPanes = sorted.map((session, idx) => {
-      const col = idx % cols
-      const row = Math.floor(idx / cols)
-      const firstPane = session.panes[0]
-      const label = firstPane
-        ? shortLabel(firstPane.label)
-        : session.name
-      return {
-        target: firstPane?.target ?? `${session.name}:0.0`,
-        label,
-        left: col * cellW,
-        top: row * cellH,
-        width: cellW,
-        height: cellH,
-      }
+    const sorted = vscodeSessions.sort((a, b) => {
+      const numA = parseInt(a.name.replace('vscode-', ''), 10)
+      const numB = parseInt(b.name.replace('vscode-', ''), 10)
+      return numA - numB
     })
 
-    const color = WINDOW_COLORS[0]
-    const minimap = renderVirtualMinimap(virtualPanes, color)
+    const panesHtml = sorted
+      .flatMap((session, idx) => {
+        const color = WINDOW_COLORS[idx % WINDOW_COLORS.length]
+        const hasSplits = session.panes.length > 1
+
+        if (hasSplits) {
+          const firstPane = session.panes[0]
+          const label = firstPane
+            ? (firstPane.cwd.split('/').pop() || session.name)
+            : session.name
+          const minimap = renderMinimap(session.panes, color)
+          return [`
+            <div class="window-header">
+              <span class="window-dot" style="background: ${color}"></span>
+              <span class="window-name">${label}</span>
+            </div>
+            ${minimap}`]
+        }
+
+        return session.panes.map((pane) => `
+          <div class="pane-item ${pane.target === state.currentTarget ? 'active' : ''}" data-target="${pane.target}">
+            <span class="window-stripe" style="background: ${color}"></span>
+            <span class="pane-indicator ${pane.active ? 'active' : ''}"></span>
+            <span class="pane-command">${pane.label}</span>
+          </div>`)
+      })
+      .join('')
 
     html += `
       <div class="session-group">
@@ -249,7 +258,7 @@ function renderSessions() {
           <span class="session-name">VS Code</span>
           <span class="session-count">${allPanes.length} panes</span>
         </div>
-        ${minimap}
+        <div class="pane-list">${panesHtml}</div>
       </div>
     `
   }
