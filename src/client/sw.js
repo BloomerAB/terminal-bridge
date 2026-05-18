@@ -1,4 +1,4 @@
-const CACHE_NAME = 'terminal-bridge-v3'
+const CACHE_NAME = 'terminal-bridge-v4'
 const STATIC_ASSETS = [
   '/',
   '/styles.css',
