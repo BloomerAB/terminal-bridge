@@ -8,7 +8,7 @@ import { attachToPane, getActiveCount } from './terminal.js'
 import { serveVendorAssets } from './static.js'
 
 const PORT = parseInt(process.env.PORT ?? '7681', 10)
-const HOST = process.env.HOST ?? '127.0.0.1'
+const HOST = process.env.HOST ?? '0.0.0.0'
 
 const app = express()
 const server = createServer(app)
