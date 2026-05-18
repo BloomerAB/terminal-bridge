@@ -252,6 +252,33 @@ html, body {
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-wake {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-lighter);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-wake:hover {
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+.btn-wake:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .new-session-form {

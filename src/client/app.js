@@ -30,6 +30,7 @@ function toggleSidebar(open) {
 $('#btn-sidebar').addEventListener('click', () => toggleSidebar(true))
 $('#btn-close-sidebar').addEventListener('click', () => toggleSidebar(false))
 $overlay.addEventListener('click', () => toggleSidebar(false))
+$('#sidebar-wake-btn').addEventListener('click', () => sendWake())
 
 async function fetchSessions() {
   try {
@@ -53,23 +54,16 @@ async function fetchSessions() {
 }
 
 async function sendWake() {
-  const $btn = $('#wake-btn')
-  if ($btn) {
-    $btn.textContent = 'Sending...'
-    $btn.disabled = true
-  }
+  const buttons = ['#wake-btn', '#sidebar-wake-btn'].map($).filter(Boolean)
+  buttons.forEach((b) => { b.textContent = 'Sending...'; b.disabled = true })
   try {
     await fetch(`${WAKE_URL}/api/wake`, { method: 'POST', mode: 'cors' })
-    if ($btn) {
-      $btn.textContent = 'Packet sent — waiting...'
-    }
+    buttons.forEach((b) => { b.textContent = 'Packet sent — waiting...' })
     setTimeout(fetchSessions, 8000)
     setTimeout(fetchSessions, 15000)
+    setTimeout(() => buttons.forEach((b) => { b.textContent = 'Wake Mac'; b.disabled = false }), 20000)
   } catch {
-    if ($btn) {
-      $btn.textContent = 'Wake failed — retry?'
-      $btn.disabled = false
-    }
+    buttons.forEach((b) => { b.textContent = 'Wake failed — retry?'; b.disabled = false })
   }
 }
 
@@ -183,6 +177,19 @@ function renderSessions() {
 
   let html = ''
 
+  html += otherSessions
+    .map((session) => `
+      <div class="session-group">
+        <div class="session-header">
+          <span class="session-dot ${session.attached ? 'attached' : 'detached'}"></span>
+          <span class="session-name">${session.name}</span>
+          <span class="session-count">${session.panes.length} panes</span>
+        </div>
+        ${renderSessionWindows(session, 0)}
+      </div>
+    `)
+    .join('')
+
   if (vscodeSessions.length > 0) {
     const allPanes = vscodeSessions.flatMap((s) => s.panes)
     const anyAttached = vscodeSessions.some((s) => s.attached)
@@ -227,19 +234,6 @@ function renderSessions() {
       </div>
     `
   }
-
-  html += otherSessions
-    .map((session) => `
-      <div class="session-group">
-        <div class="session-header">
-          <span class="session-dot ${session.attached ? 'attached' : 'detached'}"></span>
-          <span class="session-name">${session.name}</span>
-          <span class="session-count">${session.panes.length} panes</span>
-        </div>
-        ${renderSessionWindows(session, 0)}
-      </div>
-    `)
-    .join('')
 
   $list.innerHTML = html
 
@@ -521,6 +515,15 @@ function showEmptyState() {
   `
 }
 
-fetchSessions()
-showEmptyState()
+const isMobile = window.matchMedia('(max-width: 768px)').matches
+
+fetchSessions().then(() => {
+  if (!state.currentTarget) {
+    if (isMobile) {
+      toggleSidebar(true)
+    } else {
+      showEmptyState()
+    }
+  }
+})
 setInterval(fetchSessions, 5000)
