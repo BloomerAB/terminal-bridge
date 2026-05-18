@@ -20,4 +20,5 @@ unset TMUX
 export TERM=xterm-vscode
 
 exec $TMUX_BIN new-session -s "$SESSION" \; \
-  set mouse off
+  set mouse off \; \
+  set destroy-unattached on
