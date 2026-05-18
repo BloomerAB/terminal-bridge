@@ -187,47 +187,32 @@ function renderSessions() {
     const allPanes = vscodeSessions.flatMap((s) => s.panes)
     const anyAttached = vscodeSessions.some((s) => s.attached)
 
-    let windowOffset = 0
     const sessionsHtml = vscodeSessions
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((session) => {
-        const color = WINDOW_COLORS[windowOffset % WINDOW_COLORS.length]
-        windowOffset++
+      .flatMap((session, idx) => {
+        const color = WINDOW_COLORS[idx % WINDOW_COLORS.length]
+        const hasSplits = session.panes.length > 1
 
-        const allPanesInSession = session.panes
-        const windows = groupPanesByWindow(allPanesInSession)
+        if (hasSplits) {
+          const firstPane = session.panes[0]
+          const label = firstPane
+            ? (firstPane.cwd.split('/').pop() || session.name)
+            : session.name
+          const minimap = renderMinimap(session.panes, color)
+          return [`
+            <div class="window-header">
+              <span class="window-dot" style="background: ${color}"></span>
+              <span class="window-name">${label}</span>
+            </div>
+            ${minimap}`]
+        }
 
-        const firstPane = allPanesInSession[0]
-        const sessionLabel = firstPane
-          ? (firstPane.cwd.split('/').pop() || session.name)
-          : session.name
-
-        const windowsContent = windows
-          .map((win) => {
-            const minimap = renderMinimap(win.panes, color)
-            const panesHtml = win.panes.length === 1
-              ? win.panes
-                  .map(
-                    (pane) => `
-                <div class="pane-item ${pane.target === state.currentTarget ? 'active' : ''}" data-target="${pane.target}">
-                  <span class="window-stripe" style="background: ${color}"></span>
-                  <span class="pane-indicator ${pane.active ? 'active' : ''}"></span>
-                  <span class="pane-command">${pane.label}</span>
-                </div>
-              `
-                  )
-                  .join('')
-              : ''
-            return minimap + (win.panes.length === 1 ? `<div class="pane-list">${panesHtml}</div>` : '')
-          })
-          .join('')
-
-        return `
-          <div class="window-header">
-            <span class="window-dot" style="background: ${color}"></span>
-            <span class="window-name">${sessionLabel}</span>
-          </div>
-          ${windowsContent}`
+        return session.panes.map((pane) => `
+          <div class="pane-item ${pane.target === state.currentTarget ? 'active' : ''}" data-target="${pane.target}">
+            <span class="window-stripe" style="background: ${color}"></span>
+            <span class="pane-indicator ${pane.active ? 'active' : ''}"></span>
+            <span class="pane-command">${pane.label}</span>
+          </div>`)
       })
       .join('')
 
@@ -238,7 +223,7 @@ function renderSessions() {
           <span class="session-name">VS Code</span>
           <span class="session-count">${allPanes.length} panes</span>
         </div>
-        ${sessionsHtml}
+        <div class="pane-list">${sessionsHtml}</div>
       </div>
     `
   }
