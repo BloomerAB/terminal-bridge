@@ -58,6 +58,7 @@ app.post('/api/sessions', (req, res) => {
   }
   try {
     const session = createSession(name, cwd)
+    sessionCache = null
     res.status(201).json(session)
   } catch (error) {
     res.status(400).json({ error: String(error) })

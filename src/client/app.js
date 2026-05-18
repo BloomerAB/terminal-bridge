@@ -15,6 +15,7 @@ const state = {
   offline: false,
 }
 
+const isMobile = window.matchMedia('(max-width: 768px)').matches
 const $ = (sel) => document.querySelector(sel)
 const $sidebar = $('#sidebar')
 const $overlay = document.createElement('div')
@@ -323,9 +324,14 @@ function renderSessions() {
           body: JSON.stringify({ name, cwd }),
         })
         if (res.ok) {
+          const target = `${name}:0.0`
           await fetchSessions()
-          connectToPane(`${name}:0.0`)
-          toggleSidebar(false)
+          if (isMobile) {
+            highlightPane(target)
+          } else {
+            connectToPane(target)
+            toggleSidebar(false)
+          }
         }
       } catch {
         // ignore
@@ -348,14 +354,31 @@ $('#new-session-form').addEventListener('submit', async (e) => {
     })
     if (res.ok) {
       input.value = ''
+      const target = `${name}:0.0`
       await fetchSessions()
-      connectToPane(`${name}:0.0`)
-      toggleSidebar(false)
+      if (isMobile) {
+        highlightPane(target)
+      } else {
+        connectToPane(target)
+        toggleSidebar(false)
+      }
     }
   } catch {
     // ignore
   }
 })
+
+function highlightPane(target) {
+  const el = document.querySelector(`[data-target="${target}"]`)
+  if (el) {
+    el.classList.add('active')
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  setTimeout(() => {
+    connectToPane(target)
+    toggleSidebar(false)
+  }, 800)
+}
 
 function initTerminal() {
   if (state.terminal) {
@@ -542,8 +565,6 @@ function showEmptyState() {
     </div>
   `
 }
-
-const isMobile = window.matchMedia('(max-width: 768px)').matches
 
 fetchSessions().then(() => {
   if (!state.currentTarget) {
