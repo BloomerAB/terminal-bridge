@@ -75,7 +75,32 @@ function getCursorPosition(target: string): { row: number; col: number } {
   }
 }
 
-export function attachToPane(ws: WebSocket, target: string, _cols: number, _rows: number): void {
+function resizePane(target: string, cols: number, rows: number): void {
+  try {
+    execSync(
+      `${TMUX_PATH} resize-pane -t ${target} -x ${cols} -y ${rows}`,
+      { encoding: 'utf-8', timeout: 3000 }
+    )
+  } catch {
+    // ignore — pane might be the only one in the window
+  }
+}
+
+function sendFullRedraw(ws: WebSocket, target: string): void {
+  const visible = capturePane(target)
+  if (!visible || ws.readyState !== ws.OPEN) return
+  const visibleLines = visible.replace(/\n$/, '').split('\n')
+  const cursor = getCursorPosition(target)
+  const frame = '\x1b[H' +
+    visibleLines.join('\x1b[K\r\n') +
+    '\x1b[K\x1b[J' +
+    `\x1b[${cursor.row + 1};${cursor.col + 1}H`
+  ws.send(JSON.stringify({ type: 'output', data: frame }))
+}
+
+export function attachToPane(ws: WebSocket, target: string, cols: number, rows: number): void {
+  resizePane(target, cols, rows)
+
   const scrollback = captureScrollback(target)
   const scrollLines = scrollback.replace(/\n$/, '').split('\n')
   const visible = capturePane(target)
@@ -144,9 +169,13 @@ export function attachToPane(ws: WebSocket, target: string, _cols: number, _rows
 
   ws.on('message', (raw: Buffer | string) => {
     try {
-      const msg = JSON.parse(raw.toString()) as { type: string; data?: string }
+      const msg = JSON.parse(raw.toString()) as { type: string; data?: string; cols?: number; rows?: number }
       if (msg.type === 'input' && msg.data) {
         sendKeys(target, msg.data)
+      } else if (msg.type === 'resize' && msg.cols && msg.rows) {
+        resizePane(target, msg.cols, msg.rows)
+        lastNormalized = []
+        setTimeout(() => sendFullRedraw(ws, target), 50)
       }
     } catch {
       // ignore

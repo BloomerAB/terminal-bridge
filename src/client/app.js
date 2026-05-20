@@ -443,6 +443,17 @@ function connectToPane(target) {
       }
     })
 
+    let lastCols = terminal.cols
+    let lastRows = terminal.rows
+
+    terminal.onResize(({ cols: c, rows: r }) => {
+      if (ws.readyState === WebSocket.OPEN && (c !== lastCols || r !== lastRows)) {
+        lastCols = c
+        lastRows = r
+        ws.send(JSON.stringify({ type: 'resize', cols: c, rows: r }))
+      }
+    })
+
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit()
     })
