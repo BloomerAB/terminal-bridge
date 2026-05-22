@@ -531,12 +531,21 @@ function setupTouchScroll(terminal) {
 
 window.addEventListener('resize', handleResize)
 
+function updateAppHeight() {
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${vh}px`)
+  window.scrollTo(0, 0)
+  handleResize()
+}
+
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
-    document.documentElement.style.height = `${window.visualViewport.height}px`
-    handleResize()
+  window.visualViewport.addEventListener('resize', updateAppHeight)
+  window.visualViewport.addEventListener('scroll', () => {
+    window.scrollTo(0, 0)
   })
 }
+
+updateAppHeight()
 
 function showEmptyState() {
   const container = $('#terminal-container')

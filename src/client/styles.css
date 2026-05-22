@@ -18,22 +18,16 @@
   --border: #292e42;
   --toolbar-height: 48px;
   --sidebar-width: 280px;
+  --app-height: 100dvh;
 }
 
 html, body {
-  height: 100dvh;
-  height: 100%;
+  height: var(--app-height, 100%);
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
-}
-
-@supports (height: 100dvh) {
-  html, body {
-    height: 100dvh;
-  }
 }
 
 .sidebar {
